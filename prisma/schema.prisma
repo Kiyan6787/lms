@@ -1,0 +1,126 @@
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// This is your schema file that defines your data model
+
+model Course {
+  id String @id @default(uuid()) @map("_id")
+  userId String
+  title String @db.String
+  description String? @db.String
+  imageUrl String? @db.String
+  price Float?
+  isPublished Boolean @default(false)
+
+  categoryId String?
+  category Category? @relation(fields: [categoryId], references: [id])
+
+  chapters Chapter[]
+  attachments Attachment[]
+  purchases Purchase[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([categoryId], name: "categoryId")
+}
+
+model Category {
+  id String @id @default(uuid()) @map("_id")
+  name String @unique
+  courses Course[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Attachment {
+  id String @id @default(uuid()) @map("_id")
+  name String
+  url String @db.String
+
+  courseId String
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([courseId], name: "courseId")
+}
+
+model Chapter {
+  id String @id @default(uuid()) @map("_id")
+  title String
+  description String? @db.String
+  videoUrl String? @db.String
+  position Int
+  isPublished Boolean @default(false)
+  isFree Boolean @default(false)
+
+  muxData MuxData?
+
+  courseId String
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  userProgress UserProgress[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model MuxData {
+  id String @id @default(uuid()) @map("_id")
+  assetId String 
+  playbackId String
+
+  chapterId String @unique
+  chapter Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+}
+
+model UserProgress {
+  id String @id @default(uuid()) @map("_id")
+  userId String
+  
+  chapterId String
+  chapter Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  isCompleted Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId], name: "userId")
+  @@index([chapterId], name: "chapterId")
+  @@unique([userId, chapterId])
+}
+
+model Purchase {
+  id String @id @default(uuid()) @map("_id")
+  userId String
+
+  courseId String
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([courseId], name: "courseId")
+  @@unique([userId, courseId])
+}
+
+model StripeCustomer {
+  id String @id @default(uuid()) @map("_id")
+  userId String @unique
+  stripeCustomerId String @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
